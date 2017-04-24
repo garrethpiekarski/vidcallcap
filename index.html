@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Look who's talking!</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: arial, helvetica, sans-serif;
+        }
+
+        body {
+            background-color: #ccc;
+        }
+
+        #map {
+            width: 100%;
+            height: 400px
+        }
+
+        #controls {
+            width: 100%;
+            min-height: 125px;
+            background-color: #335;
+            color: #fff;
+            padding: 25px 3%;
+        }
+
+        .location,
+        .ip,
+        .action {
+            margin: 5px;
+            display: none;
+            float: left;
+            padding: 5px
+        }
+
+        .location .label,
+        .ip .label,
+        .action .label {
+            font-weight: bold;
+        }
+
+        button#mapAndSave {
+            background: #8A4;
+            border: none;
+            color: #fff;
+            font-weight: bold;
+            font-size: 2em;
+            text-transform: uppercase;
+            padding: 10px 20px;
+        }
+
+        button#mapAndSave:hover {
+          background: #aaa244;
+        }
+
+        button#mapAndSave:active {
+          background: #40a097;
+        }
+
+        #hits {
+          min-height: 100px;
+          border: 2px solid #fff;
+          text-align: center;
+          float: right;
+          padding: 5px 25px;
+          margin-top: -30px;
+        }
+
+        #hits .value {
+          font-size: 2em;
+          display: block;
+        }
+
+        #listPanel {
+            width: 100%;
+        }
+
+        #entryList {
+            width: 100%;
+            display: block;
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #entryList li {
+            width: 100%;
+            float: left;
+            display: inline-block;
+            background-color: #222;
+            color: #fff;
+            border: 1px solid #333;
+            padding: 30px 5%;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        #entryList li:hover,
+        #entryList li:active {
+            background-color: #333;
+        }
+    </style>
+    <script>
+        function initMap() {
+            var niagaraFalls = {
+                lat: 43.0773,
+                lng: -79.0753
+            };
+            window.map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 4,
+                center: niagaraFalls
+            });
+        }
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdDTnB6GF8kS4Vox5rckOXQt2MTvPeX30&callback=initMap">
+    </script>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="controls">
+        <div class="nothing">Nothing selected yet.</div>
+        <div class="location">
+            <span class="label">Location:</span>
+            <span class="value"></span>
+        </div>
+        <div class="ip">
+            <span class="label">IP:</span>
+            <span class="value"></span>
+        </div>
+        <div class="action">
+            <button id="mapAndSave">Keep</button>
+        </div>
+        <div id="hits">
+          <strong>HITS</strong>
+          <span class="value">0</span>
+        </div>
+    </div>
+    <div id="listPanel">
+        <ul id="entryList">
+
+        </ul>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" charset="utf-8"></script>
+    <script>
+        var lastMessage = '';
+        jQuery(function($) {
+            var socket = io();
+            socket.on('address', function(msg) {
+                if (msg !== lastMessage) {
+                    var msgObj = JSON.parse(msg);
+                    $('#entryList').prepend($('<li>').text(`${msgObj.city}, ${msgObj.region_name}, ${msgObj.country_name}`).attr('data-geo', JSON.stringify(msgObj)));
+                }
+                lastMessage = msg;
+            });
+
+            // add info to panel and map
+            $('#entryList').on('click', 'li', function() {
+                var infoObj = JSON.parse($(this).attr('data-geo'));
+                var hits = parseInt($('#hits .value').text());
+                $('.location .value').html(`${infoObj.city}, ${infoObj.region_name}, ${infoObj.country_name}`);
+                $('.ip .value').html(infoObj.ip);
+                $('.nothing').hide();
+                $('.location, .ip, .action').show();
+                var point = {
+                    lat: infoObj.latitude,
+                    lng: infoObj.longitude
+                };
+                console.log(point);
+                var marker = new google.maps.Marker({
+                    position: point,
+                    map: map
+                });
+                map.panTo(point);
+                map.setZoom(10);
+                $("#mapAndSave").attr('data-geo', $(this).attr('data-geo'));
+                hits = hits + 1;
+                $('#hits .value').text(hits);
+
+            });
+
+            $('#mapAndSave').click(function(){
+
+            });
+        });
+    </script>
+</body>
+
+</html>
